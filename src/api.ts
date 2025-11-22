@@ -1,0 +1,128 @@
+import type { Food } from './index';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// 注意：部署时需要设置环境变量 VITE_API_URL 指向您的后端API地址
+// 或者将后端也部署到云平台后更新此配置
+
+// API 基础类
+class ApiService {
+  // 通用请求方法
+  async request(endpoint: string, options: RequestInit = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '网络错误' }));
+        throw new Error(errorData.error || `请求失败: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API请求错误:', error);
+      throw error;
+    }
+  }
+
+  // ==================== 菜品相关API ====================
+  
+  // 获取菜品列表
+  async getFoods(category?: string): Promise<Food[]> {
+    const params = category && category !== '全部' ? `?category=${encodeURIComponent(category)}` : '';
+    return this.request(`/foods${params}`) as Promise<Food[]>;
+  }
+
+  // 获取单个菜品
+  async getFood(id: string): Promise<Food> {
+    return this.request(`/foods/${id}`) as Promise<Food>;
+  }
+
+  // 创建菜品
+  async createFood(foodData: Omit<Food, 'id'>): Promise<Food> {
+    return this.request('/foods', {
+      method: 'POST',
+      body: JSON.stringify(foodData),
+    }) as Promise<Food>;
+  }
+
+  // 更新菜品
+  async updateFood(id: string, foodData: Food): Promise<Food> {
+    return this.request(`/foods/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(foodData),
+    }) as Promise<Food>;
+  }
+
+  // 删除菜品
+  async deleteFood(id: string): Promise<void> {
+    await this.request(`/foods/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== 订单相关API ====================
+  
+  // 获取订单列表
+  async getOrders(): Promise<any[]> {
+    return this.request('/orders') as Promise<any[]>;
+  }
+
+  // 创建订单
+  async createOrder(orderData: any): Promise<any> {
+    return this.request('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  }
+
+  // 更新订单状态
+  async updateOrderStatus(id: string, status: string): Promise<any> {
+    return this.request(`/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // ==================== 收藏相关API ====================
+  
+  // 获取收藏列表
+  async getFavorites(): Promise<Food[]> {
+    return this.request('/favorites') as Promise<Food[]>;
+  }
+
+  // 添加收藏
+  async addFavorite(foodId: string): Promise<any> {
+    return this.request('/favorites', {
+      method: 'POST',
+      body: JSON.stringify({ food_id: foodId }),
+    });
+  }
+
+  // 取消收藏
+  async removeFavorite(foodId: string): Promise<any> {
+    return this.request(`/favorites/${foodId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== 统计相关API ====================
+  
+  // 获取统计数据
+  async getStats(): Promise<any> {
+    return this.request('/stats');
+  }
+}
+
+// 创建单例实例
+const apiService = new ApiService();
+
+export default apiService;

@@ -1,0 +1,111 @@
+import React, { useState } from 'react';
+import { foodsData } from './data';
+import type { Food, CategoryType } from './index';
+import { Card, Button, Badge, Row, Col, ButtonGroup, ToggleButton } from 'react-bootstrap';
+
+const MenuComponent: React.FC = () => {
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('全部');
+
+  const categories: CategoryType[] = ['全部', '中式', '西式', '日式', '韩式', '甜品', '饮品'];
+
+  const filteredFoods = selectedCategory === '全部' 
+    ? foodsData 
+    : foodsData.filter(food => food.category === selectedCategory);
+
+  const handleAddToCart = (food: Food) => {
+    console.log('Added to cart:', food);
+  };
+
+  const renderStars = (rating: number) => {
+    return '⭐'.repeat(Math.floor(rating)) + (rating % 1 !== 0 ? '☆' : '');
+  };
+
+  return (
+    <div className="container mt-4">
+      <div className="text-center mb-4">
+        <h2 className="text-primary mb-3">🍽️ 精选美食</h2>
+        <p className="text-muted">为老婆精心挑选的美味佳肴</p>
+      </div>
+
+      <div className="mb-4">
+        <ButtonGroup className="flex-wrap" role="group">
+          {categories.map((category) => (
+            <ToggleButton
+              key={category}
+              type="radio"
+              name="category"
+              value={category}
+              checked={selectedCategory === category}
+              onChange={() => setSelectedCategory(category)}
+              variant={selectedCategory === category ? 'primary' : 'outline-primary'}
+              className="mb-2"
+            >
+              {category}
+            </ToggleButton>
+          ))}
+        </ButtonGroup>
+      </div>
+
+      <Row xs={1} md={2} lg={3} className="g-4">
+        {filteredFoods.map((food) => (
+          <Col key={food.id}>
+            <Card className="h-100 shadow-sm">
+              <div className="position-relative">
+                <Card.Img 
+                  variant="top" 
+                  src={food.image} 
+                  style={{ height: '200px', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjUgMTAwSDE3NVYxMjVIMTI1VjEwMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHRleHQgeD0iMTUwIiB5PSIxNDAiIGZpbGw9IiM2QjczODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPtivtOespiDlj4rlmqHmnInlpb3lpLHotKU8L3RleHQ+Cjwvc3ZnPg==';
+                  }}
+                />
+                <Button
+                  variant="white"
+                  className="position-absolute top-0 end-0 m-2 p-1 rounded-circle border-0"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
+                  onClick={() => console.log('Toggle favorite:', food.id)}
+                >
+                  🤍
+                </Button>
+                <Badge 
+                  bg="primary" 
+                  className="position-absolute bottom-0 start-0 m-2"
+                >
+                  {food.category}
+                </Badge>
+              </div>
+              
+              <Card.Body className="d-flex flex-column">
+                <Card.Title className="h5">{food.name}</Card.Title>
+                <Card.Text className="text-muted small flex-grow-1">
+                  {food.description}
+                </Card.Text>
+                
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <span className="h5 text-primary mb-0">¥{food.price}</span>
+                  <small className="text-warning">{renderStars(food.rating)}</small>
+                </div>
+
+                <Button 
+                  variant="primary" 
+                  className="w-100"
+                  onClick={() => handleAddToCart(food)}
+                >
+                  加入购物车 🛒
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {filteredFoods.length === 0 && (
+        <div className="text-center py-5">
+          <p className="text-muted">暂无该分类的美食</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MenuComponent;

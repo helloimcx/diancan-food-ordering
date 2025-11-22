@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #ff6b9d;
+  --secondary-color: #ffa8cc;
+  --accent-color: #ffcdd2;
+  --text-color: #2c3e50;
+  --text-muted: #6c757d;
+  --bg-light: #f8f9fa;
+  --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--bg-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.navbar-brand {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn {
+  border-radius: 25px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, #e91e63, #ff6b9d);
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.badge {
+  border-radius: 20px;
+}
+
+.card-img-top {
+  border-radius: 15px 15px 0 0;
+}
+
+.navbar {
+  background: white !important;
+  box-shadow: var(--shadow);
+}
+
+.nav-link.btn {
+  border-radius: 25px;
+  margin: 0 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.nav-link.btn:hover {
+  transform: translateY(-1px);
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.bg-light {
+  background: linear-gradient(135deg, #f8f9fa 0%, #fff5f8 100%) !important;
+}
+
+.container {
+  max-width: 1200px;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 15px;
+}
+
+.modal-header {
+  border-bottom: 1px solid #dee2e6;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border-radius: 15px 15px 0 0;
+}
+
+.modal-header .btn-close {
+  filter: invert(1);
+}
+
+.form-control {
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 157, 0.25);
+}
+
+.hover-shadow:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.min-vh-100 {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #fff5f8 50%, #f8f9fa 100%);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.25rem !important;
+  }
+  
+  .btn {
+    font-size: 0.9rem;
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e91e63;
+}
