@@ -169,9 +169,9 @@ function App() {
     }
   };
 
-  const updateFood = async (updatedFood: Food) => {
+  const updateFood = async (foodData: Food) => {
     try {
-      await apiService.updateFood(updatedFood.id, updatedFood);
+      await apiService.updateFood(foodData.id, foodData);
       setShowEditModal(false);
       setEditingFood(null);
       await loadFoods(selectedCategory);

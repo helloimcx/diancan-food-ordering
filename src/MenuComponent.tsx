@@ -32,6 +32,7 @@ const MenuComponent: React.FC = () => {
           {categories.map((category) => (
             <ToggleButton
               key={category}
+              id={`category-${category}`}
               type="radio"
               name="category"
               value={category}
