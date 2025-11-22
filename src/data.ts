@@ -1,4 +1,4 @@
-import { Food } from './index';
+import type { Food } from './index';
 
 export const foodsData: Food[] = [
   // 中式

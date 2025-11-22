@@ -8,7 +8,7 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentView, setCurrentView }) => {
   const navItems = [
-    { key: 'menu', label: '美食菜单', icon: '🍽️' },
+    { key: 'menu', label: '美食菜单', icon: '🍽️', count: 0 },
     { key: 'cart', label: '购物车', icon: '🛒', count: 0 },
     { key: 'favorites', label: '收藏夹', icon: '❤️', count: 0 },
     { key: 'history', label: '历史订单', icon: '📋', count: 0 }
