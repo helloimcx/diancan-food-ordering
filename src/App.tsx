@@ -169,15 +169,22 @@ function App() {
     }
   };
 
-  const updateFood = async (foodData: Food) => {
+  const updateFood = async (foodData: Food | Omit<Food, 'id'>) => {
     try {
-      await apiService.updateFood(foodData.id, foodData);
-      setShowEditModal(false);
-      setEditingFood(null);
+      if ('id' in foodData) {
+        // 这是编辑模式
+        await apiService.updateFood(foodData.id, foodData);
+        setShowEditModal(false);
+        setEditingFood(null);
+      } else {
+        // 这是添加模式
+        await apiService.createFood(foodData);
+        setShowAddModal(false);
+      }
       await loadFoods(selectedCategory);
       setError(null);
     } catch (err) {
-      setError('更新菜品失败: ' + (err as Error).message);
+      setError('操作失败: ' + (err as Error).message);
     }
   };
 
