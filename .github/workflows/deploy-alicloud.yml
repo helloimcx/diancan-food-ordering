@@ -1,0 +1,78 @@
+name: 阿里云服务器Docker部署
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 登录GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 构建和推送Docker镜像
+      uses: docker/build-push-action@v6
+      with:
+        context: ./server
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 部署到阿里云服务器
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.ALICLOUD_HOST }}
+        username: ${{ secrets.ALICLOUD_USER }}
+        key: ${{ secrets.ALICLOUD_PRIVATE_KEY }}
+        port: ${{ secrets.ALICLOUD_PORT || 22 }}
+        script: |
+          # 登录GitHub Container Registry
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          
+          # 停止并删除现有容器
+          docker stop diancan-backend || true
+          docker rm diancan-backend || true
+          
+          # 拉取最新镜像
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
+          
+          # 启动新容器
+          docker run -d \
+            --name diancan-backend \
+            --restart unless-stopped \
+            -p 3001:3001 \
+            -e NODE_ENV=production \
+            -v /opt/diancan-backend/data:/app \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
+          
+          # 等待服务启动
+          sleep 10
+          
+          # 验证部署
+          curl -f http://localhost:3001/api/foods || echo "⚠️ 健康检查失败"
+          
+          echo "✅ 阿里云服务器部署完成"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
