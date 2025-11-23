@@ -1,4 +1,3 @@
-# 后端Dockerfile - 家庭点餐系统
 FROM node:18-alpine
 
 # 设置工作目录
