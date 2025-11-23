@@ -50,8 +50,8 @@ jobs:
         port: ${{ secrets.ALICLOUD_PORT || 22 }}
         script: |
           # 登录GitHub Container Registry
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          
+          docker login ${{ env.REGISTRY }} -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
           # 停止并删除现有容器
           docker stop diancan-backend || true
           docker rm diancan-backend || true
