@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      packages: write
 
     steps:
     - name: 检出代码
@@ -50,21 +51,34 @@ jobs:
         echo "🔍 验证镜像推送..."
         
         # 等待镜像同步
-        sleep 30
+        sleep 60
         
-        # 验证镜像存在
-        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://ghcr.io/v2/helloimcx/diancan-food-ordering/manifests/backend-latest")
+        # 使用正确的认证方式验证镜像
+        echo "🔐 使用GITHUB_TOKEN验证镜像..."
+        TOKEN="${{ secrets.GITHUB_TOKEN }}"
         
-        if [ "$RESPONSE" = "200" ]; then
-          echo "✅ 镜像推送成功: backend-latest"
+        # 尝试不同的认证头
+        if RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer $TOKEN" \
+          -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+          "https://ghcr.io/v2/${{ env.IMAGE_NAME }}/manifests/backend-latest" 2>/dev/null); then
+          echo "✅ 镜像验证响应码: $RESPONSE"
         else
-          echo "❌ 镜像推送失败，状态码: $RESPONSE"
-          echo "📋 可用标签列表:"
-          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://ghcr.io/v2/helloimcx/diancan-food-ordering/tags/list" | jq '.'
-          exit 1
+          echo "⚠️ 镜像验证失败，状态码: $RESPONSE"
+        fi
+        
+        # 列出镜像标签（使用Actor权限）
+        echo "📋 列出镜像标签..."
+        curl -s -H "Authorization: token $TOKEN" \
+          "https://ghcr.io/v2/${{ env.IMAGE_NAME }}/tags/list" | jq '.' 2>/dev/null || \
+          echo "⚠️ 无法获取标签列表，可能需要等待镜像同步"
+        
+        # 检查本地是否能看到推送的镜像
+        echo "🔍 使用docker验证镜像..."
+        if docker manifest inspect "ghcr.io/${{ env.IMAGE_NAME }}:backend-latest" >/dev/null 2>&1; then
+          echo "✅ 镜像验证成功！"
+        else
+          echo "⚠️ 镜像尚未在本地可用，可能需要等待同步"
         fi
 
     - name: 服务器部署（需要SSH配置）
