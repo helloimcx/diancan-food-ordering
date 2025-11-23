@@ -40,25 +40,6 @@ jobs:
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
-    
-    - name: 验证镜像推送
-      run: |
-        echo "验证镜像是否成功推送到GitHub Container Registry..."
-        
-        # 使用cURL检查镜像是否存在
-        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://ghcr.io/v2/helloimcx/diancan-food-ordering/manifests/backend-latest")
-        
-        if [ "$RESPONSE" = "200" ]; then
-          echo "✅ 镜像 backend-latest 存在于GitHub Container Registry"
-        else
-          echo "❌ 镜像 backend-latest 不存在，HTTP状态码: $RESPONSE"
-          echo "尝试列出所有可用标签："
-          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://ghcr.io/v2/helloimcx/diancan-food-ordering/tags/list"
-          exit 1
-        fi
 
     - name: 部署到阿里云服务器
       uses: appleboy/ssh-action@v1.0.0
