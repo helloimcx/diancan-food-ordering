@@ -1,0 +1,136 @@
+name: 简化部署到阿里云
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: 设置Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 登录GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 构建和推送Docker镜像
+      uses: docker/build-push-action@v6
+      with:
+        context: ./server
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 验证镜像推送
+      run: |
+        echo "🔍 验证镜像推送..."
+        
+        # 等待镜像同步
+        sleep 30
+        
+        # 验证镜像存在
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://ghcr.io/v2/helloimcx/diancan-food-ordering/manifests/backend-latest")
+        
+        if [ "$RESPONSE" = "200" ]; then
+          echo "✅ 镜像推送成功: backend-latest"
+        else
+          echo "❌ 镜像推送失败，状态码: $RESPONSE"
+          echo "📋 可用标签列表:"
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://ghcr.io/v2/helloimcx/diancan-food-ordering/tags/list" | jq '.'
+          exit 1
+        fi
+
+    - name: 服务器部署（需要SSH配置）
+      if: env.ALICLOUD_HOST != ''
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.ALICLOUD_HOST }}
+        username: ${{ secrets.ALICLOUD_USER || 'root' }}
+        key: ${{ secrets.ALICLOUD_PRIVATE_KEY }}
+        port: ${{ secrets.ALICLOUD_PORT || 22 }}
+        timeout: 30000
+        script: |
+          echo "🔄 开始服务器部署..."
+          
+          # 检查Docker是否可用
+          if ! command -v docker &> /dev/null; then
+            echo "❌ Docker未安装，尝试安装..."
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sh get-docker.sh
+            systemctl start docker
+          fi
+          
+          # 检查镜像是否存在
+          echo "🔍 检查Docker镜像..."
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest || {
+            echo "❌ 镜像拉取失败，尝试latest标签..."
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          }
+          
+          # 停止并删除现有容器
+          echo "🛑 停止现有容器..."
+          docker stop diancan-backend || true
+          docker rm diancan-backend || true
+          
+          # 启动新容器
+          echo "🚀 启动新容器..."
+          docker run -d \
+            --name diancan-backend \
+            --restart unless-stopped \
+            -p 3001:3001 \
+            -e NODE_ENV=production \
+            -v /opt/diancan-backend/data:/app \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:backend-latest || \
+          docker run -d \
+            --name diancan-backend \
+            --restart unless-stopped \
+            -p 3001:3001 \
+            -e NODE_ENV=production \
+            -v /opt/diancan-backend/data:/app \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          # 等待服务启动
+          echo "⏳ 等待服务启动..."
+          sleep 15
+          
+          # 验证部署
+          echo "✅ 验证部署状态..."
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          
+          # 健康检查
+          if curl -f http://localhost:3001/api/foods; then
+            echo "✅ 服务健康检查通过"
+          else
+            echo "⚠️ 健康检查失败，检查日志:"
+            docker logs diancan-backend --tail 20
+            exit 1
+          fi
+          
+          echo "🎉 部署完成！"
